@@ -1,0 +1,22 @@
+<html>
+    <head>
+        <title>Test</title>
+    </head>
+    <body>
+        <h1 style="display: inline">X: </h1><h1 style="display: inline" id="outputX">0</h1>
+        <br>
+        <h1 style="display: inline">Y: </h1><h1 style="display: inline" id="outputY">0</h1>
+        <script>
+            let outX = document.getElementById("outputX");
+            let outY = document.getElementById("outputY");
+            document.onmousemove = handleMouseMove;
+            
+            function handleMouseMove(event) {
+                var x = event.clientX;
+                var y = event.clientY;
+                outX.innerHTML = x;
+                outY.innerHTML = y;
+            }
+        </script>
+    </body>
+</html>
