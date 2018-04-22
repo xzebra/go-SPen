@@ -45,13 +45,12 @@ func main() {
 		http.ServeFile(w, r, "public/favicon.ico")
 	})
 	http.Handle("/", http.FileServer(http.Dir("public/")))
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/spen", func(w http.ResponseWriter, r *http.Request) {
 		conn, _ := upgrader.Upgrade(w, r, nil)
 		go func(conn *websocket.Conn) {
 			for {
 				_, msg, err := conn.ReadMessage()
 				if err != nil {
-					fmt.Println("User disconnected")
 					conn.Close()
 					break
 				}
@@ -68,6 +67,33 @@ func main() {
 					tempHeight, _ := strconv.Atoi(input[2])
 					DeviceHeight = float64(tempHeight)
 				}
+			}
+		}(conn)
+	})
+
+	http.HandleFunc("/finger", func(w http.ResponseWriter, r *http.Request) {
+		conn, _ := upgrader.Upgrade(w, r, nil)
+		go func(conn *websocket.Conn) {
+			for {
+				_, _, err := conn.ReadMessage()
+				if err != nil {
+					conn.Close()
+					break
+				}
+
+				/*input := strings.Split(string(msg), ",")
+				if len(input) == 2 {
+					x, _ := strconv.Atoi(input[0])
+					y, _ := strconv.Atoi(input[1])
+					moveMouse(x, y)
+				} else if input[0] == "screen" {
+					// Init device screen size
+					tempWidth, _ := strconv.Atoi(input[1])
+					DeviceWidth = float64(tempWidth)
+					tempHeight, _ := strconv.Atoi(input[2])
+					DeviceHeight = float64(tempHeight)
+				}*/
+				fmt.Println("using finger")
 			}
 		}(conn)
 	})
