@@ -3,10 +3,11 @@
         <title>Test</title>
         <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' />
     </head>
-    <body style="overflow: hidden">
+    <body style="margin:0; overflow: hidden" onload="startup()">
         <h1 id="conn_info" style="text-align: center">Connecting to the server...</h1>
         <div id="touch_area" style="display: none">
-            <script src="spen-events.js"></script>    
+            <canvas id="canvas"></canvas>
         </div>
+        <script src="spen-events.js"></script> 
     </body>
 </html>

@@ -41,11 +41,11 @@ func loadConfig() {
 	}
 }
 
-func moveMouse(x, y int) {
+func moveMouse(x, y float64) {
 	// height ratio * screen width
-	tx := int((float64(y) / DeviceHeight) * config.ScreenWidth)
+	tx := int((y / DeviceHeight) * config.ScreenWidth)
 	// width ratio (inverted) * screen width
-	ty := int(((DeviceWidth - float64(x)) / DeviceWidth) * config.ScreenHeight)
+	ty := int(((DeviceWidth - x) / DeviceWidth) * config.ScreenHeight)
 	mouse.Move(tx, ty)
 }
 
@@ -76,14 +76,20 @@ func main() {
 
 				input := strings.Split(string(msg), ",")
 				if len(input) == 2 {
-					x, _ := strconv.Atoi(input[0])
-					y, _ := strconv.Atoi(input[1])
+					x, _ := strconv.ParseFloat(input[0], 64)
+					y, _ := strconv.ParseFloat(input[1], 64)
+					if pressing {
+						fmt.Println(input)
+					}
 					moveMouse(x, y)
 				} else if input[0] == "pressing" {
+					fmt.Println(input)
 					setPressing(true)
 				} else if input[0] == "stoppressing" {
+					fmt.Println(input)
 					setPressing(false)
 				} else if input[0] == "screen" {
+					fmt.Println(input)
 					// Init device screen size
 					tempWidth, _ := strconv.Atoi(input[1])
 					DeviceWidth = float64(tempWidth)
