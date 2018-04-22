@@ -12,15 +12,22 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Config is used to decode the config.json
+// file into a Config variable
 type Config struct {
 	ScreenWidth  float64 `json:"screen-width"`
 	ScreenHeight float64 `json:"screen-height"`
 }
 
 var (
-	upgrader     websocket.Upgrader
-	config       Config
-	DeviceWidth  float64
+	upgrader websocket.Upgrader
+	pressing bool
+	config   Config
+	// DeviceWidth refers to the phone or tablet
+	// screen width
+	DeviceWidth float64
+	// DeviceHeight refers to the phone or tablet
+	// screen height
 	DeviceHeight float64
 )
 
@@ -35,9 +42,20 @@ func loadConfig() {
 }
 
 func moveMouse(x, y int) {
-	heightRatio := float64(y) / DeviceHeight
-	widthRatio := (DeviceWidth - float64(x)) / DeviceWidth //invert the coord
-	mouse.Move(int(heightRatio*config.ScreenWidth), int(widthRatio*config.ScreenHeight))
+	// height ratio * screen width
+	tx := int((float64(y) / DeviceHeight) * config.ScreenWidth)
+	// width ratio (inverted) * screen width
+	ty := int(((DeviceWidth - float64(x)) / DeviceWidth) * config.ScreenHeight)
+	mouse.Move(tx, ty)
+}
+
+func setPressing(b bool) {
+	pressing = b
+	if b {
+		mouse.MouseToggle("down")
+	} else {
+		mouse.MouseToggle("up")
+	}
 }
 
 func main() {
@@ -45,6 +63,7 @@ func main() {
 		http.ServeFile(w, r, "public/favicon.ico")
 	})
 	http.Handle("/", http.FileServer(http.Dir("public/")))
+
 	http.HandleFunc("/spen", func(w http.ResponseWriter, r *http.Request) {
 		conn, _ := upgrader.Upgrade(w, r, nil)
 		go func(conn *websocket.Conn) {
@@ -60,6 +79,10 @@ func main() {
 					x, _ := strconv.Atoi(input[0])
 					y, _ := strconv.Atoi(input[1])
 					moveMouse(x, y)
+				} else if input[0] == "pressing" {
+					setPressing(true)
+				} else if input[0] == "stoppressing" {
+					setPressing(false)
 				} else if input[0] == "screen" {
 					// Init device screen size
 					tempWidth, _ := strconv.Atoi(input[1])
@@ -71,6 +94,7 @@ func main() {
 		}(conn)
 	})
 
+	// This WebSocket will receive only the touch events from the finger
 	http.HandleFunc("/finger", func(w http.ResponseWriter, r *http.Request) {
 		conn, _ := upgrader.Upgrade(w, r, nil)
 		go func(conn *websocket.Conn) {
@@ -93,7 +117,6 @@ func main() {
 					tempHeight, _ := strconv.Atoi(input[2])
 					DeviceHeight = float64(tempHeight)
 				}*/
-				fmt.Println("using finger")
 			}
 		}(conn)
 	})

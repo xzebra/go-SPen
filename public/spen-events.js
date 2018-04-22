@@ -19,13 +19,7 @@ var socketCheck = setInterval(function() {
 }, 500);
 
 document.addEventListener("mousemove", function(e) {
-    // SPen touch radius is always 0 while finger touches
-    // are greater than 0
-    if(e.radiusX === 0) { // Using the spen   
-        spenWS.send(e.clientX + "," + e.clientY);
-    } else { // Touching with the finger        
-        fingerWS.send(e.clientX + "," + e.clientY);
-    }
+    spenWS.send(e.clientX + "," + e.clientY);
 });
 
 document.addEventListener("touchmove", function(e) {
@@ -37,4 +31,18 @@ document.addEventListener("touchmove", function(e) {
     } else { // Touching with the finger
         fingerWS.send(Math.floor(touch.clientX) + "," + Math.floor(touch.clientY));
     }
+});
+
+document.addEventListener("touchstart", function(e) {
+    let touch = e.targetTouches[0];
+    if(touch.radiusX === 0) { // Using the spen
+        spenWS.send("pressing");
+    } else { // Touching with the finger
+        fingerWS.send("pressing");
+    }
+});
+
+document.addEventListener("touchend", function(e) {
+    let touch = e.targetTouches[0];
+    spenWS.send("stoppressing");
 });
