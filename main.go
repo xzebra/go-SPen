@@ -78,18 +78,12 @@ func main() {
 				if len(input) == 2 {
 					x, _ := strconv.ParseFloat(input[0], 64)
 					y, _ := strconv.ParseFloat(input[1], 64)
-					if pressing {
-						fmt.Println(input)
-					}
 					moveMouse(x, y)
 				} else if input[0] == "pressing" {
-					fmt.Println(input)
 					setPressing(true)
 				} else if input[0] == "stoppressing" {
-					fmt.Println(input)
 					setPressing(false)
 				} else if input[0] == "screen" {
-					fmt.Println(input)
 					// Init device screen size
 					tempWidth, _ := strconv.Atoi(input[1])
 					DeviceWidth = float64(tempWidth)
