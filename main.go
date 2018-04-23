@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	mouse "github.com/go-vgo/robotgo"
+	control "github.com/go-vgo/robotgo"
 	"github.com/gorilla/websocket"
 )
 
@@ -17,6 +17,13 @@ import (
 type Config struct {
 	ScreenWidth  float64 `json:"screen-width"`
 	ScreenHeight float64 `json:"screen-height"`
+}
+
+type finger struct {
+	direction int
+	swiping   bool
+	initX     float64
+	initY     float64
 }
 
 var (
@@ -29,6 +36,8 @@ var (
 	// DeviceHeight refers to the phone or tablet
 	// screen height
 	DeviceHeight float64
+
+	fingers [2]finger
 )
 
 func loadConfig() {
@@ -46,19 +55,66 @@ func moveMouse(x, y float64) {
 	tx := int((y / DeviceHeight) * config.ScreenWidth)
 	// width ratio (inverted) * screen width
 	ty := int(((DeviceWidth - x) / DeviceWidth) * config.ScreenHeight)
-	mouse.Move(tx, ty)
+	control.Move(tx, ty)
 }
 
 func setPressing(b bool) {
 	pressing = b
 	if b {
-		mouse.MouseToggle("down")
+		control.MouseToggle("down")
 	} else {
-		mouse.MouseToggle("up")
+		control.MouseToggle("up")
+	}
+}
+
+func zoom(dir string) {
+	control.KeyToggle("control", "down")
+	control.ScrollMouse(1, dir)
+	control.KeyToggle("control", "up")
+}
+
+func swipe(direction int, initX float64, initY float64, id int) {
+	fingers[id].direction = direction
+	fingers[id].swiping = true
+	fingers[id].initX = initX
+	fingers[id].initY = initY
+	if fingers[0].swiping && fingers[1].swiping { // both are swiping
+		fmt.Println(fingers[0].direction, fingers[1].direction)
+		if (fingers[0].direction+fingers[1].direction)%2 == 0 {
+			switch fingers[0].direction {
+			case 4:
+				if fingers[0].initY < fingers[1].initY {
+					zoom("up")
+				} else {
+					zoom("down")
+				}
+			case 2:
+				if fingers[0].initY > fingers[1].initY {
+					zoom("up")
+				} else {
+					zoom("down")
+				}
+			case 1:
+				if fingers[0].initX > fingers[1].initX {
+					zoom("up")
+				} else {
+					zoom("down")
+				}
+			case 3:
+				if fingers[0].initX < fingers[1].initX {
+					zoom("up")
+				} else {
+					zoom("down")
+				}
+			}
+		}
 	}
 }
 
 func main() {
+	fingers[0].direction = 0
+	fingers[1].direction = 0
+
 	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "public/favicon.ico")
 	})
@@ -99,24 +155,27 @@ func main() {
 		conn, _ := upgrader.Upgrade(w, r, nil)
 		go func(conn *websocket.Conn) {
 			for {
-				_, _, err := conn.ReadMessage()
+				_, msg, err := conn.ReadMessage()
 				if err != nil {
 					conn.Close()
 					break
 				}
-
-				/*input := strings.Split(string(msg), ",")
-				if len(input) == 2 {
-					x, _ := strconv.Atoi(input[0])
-					y, _ := strconv.Atoi(input[1])
-					moveMouse(x, y)
-				} else if input[0] == "screen" {
-					// Init device screen size
-					tempWidth, _ := strconv.Atoi(input[1])
-					DeviceWidth = float64(tempWidth)
-					tempHeight, _ := strconv.Atoi(input[2])
-					DeviceHeight = float64(tempHeight)
-				}*/
+				//fmt.Println(string(msg))
+				input := strings.Split(string(msg), ",")
+				if len(input) == 5 {
+					if input[0] == "swipe" {
+						initX, _ := strconv.ParseFloat(input[1], 32)
+						initY, _ := strconv.ParseFloat(input[2], 32)
+						direction, _ := strconv.Atoi(input[3])
+						id, _ := strconv.Atoi(input[4])
+						swipe(direction, initX, initY, id)
+					}
+				} else if len(input) == 2 {
+					if input[0] == "stop" {
+						id, _ := strconv.Atoi(input[1])
+						fingers[id].swiping = false
+					}
+				}
 			}
 		}(conn)
 	})
