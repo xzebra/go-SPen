@@ -79,7 +79,6 @@ func swipe(direction int, initX float64, initY float64, id int) {
 	fingers[id].initX = initX
 	fingers[id].initY = initY
 	if fingers[0].swiping && fingers[1].swiping { // both are swiping
-		fmt.Println(fingers[0].direction, fingers[1].direction)
 		if (fingers[0].direction+fingers[1].direction)%2 == 0 {
 			switch fingers[0].direction {
 			case 4:
