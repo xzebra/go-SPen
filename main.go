@@ -17,6 +17,8 @@ import (
 type Config struct {
 	ScreenWidth  float64 `json:"screen-width"`
 	ScreenHeight float64 `json:"screen-height"`
+	IP           string  `json:"ip"`
+	Port         string  `json:"port"`
 }
 
 type finger struct {
@@ -179,7 +181,7 @@ func main() {
 		}(conn)
 	})
 
-	fmt.Println("Server running at localhost:8080")
+	fmt.Println("Server running at", config.IP + ":" + config.Port)
 	loadConfig()
-	http.ListenAndServe("192.168.100.9:8080", nil)
+	http.ListenAndServe(config.IP + ":" + Config.Port, nil)
 }
