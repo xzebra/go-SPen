@@ -1,4 +1,6 @@
 {
     "screen-width": 1920,
-    "screen-height": 1080
+    "screen-height": 1080,
+    "ip": "192.168.100.9",
+    "port": "8080"
 }
