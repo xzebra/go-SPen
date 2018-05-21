@@ -1,5 +1,5 @@
-var spenWS = new WebSocket("ws://192.168.100.9:8080/spen");
-var fingerWS = new WebSocket("ws://192.168.100.9:8080/finger");
+var spenWS = new WebSocket("ws://" + window.targetIP + ":" + window.targetPort + "/spen");
+var fingerWS = new WebSocket("ws://" + window.targetIP + ":" + window.targetPort + "/finger");
 
 var connInfo = document.getElementById("conn_info");
 var touchArea = document.getElementById("touch_area");
@@ -92,7 +92,7 @@ function handleMove(evt) {
                     fingerWS.send("swipe," + fingers[id].xDown + "," + fingers[id].yDown + ",3," + id);
                 } else if (xDiff < 0){ //up swipe
                     fingerWS.send("swipe," + fingers[id].xDown + "," + fingers[id].yDown + ",1," + id);
-                }           
+                }
             } else if (Math.abs(xDiff) < Math.abs(yDiff)){ // vertical -> horizontal
                 if(yDiff > 0) { // left swipe
                     fingerWS.send("swipe," + fingers[id].xDown + "," + fingers[id].yDown + ",4," + id);

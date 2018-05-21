@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -117,9 +119,22 @@ func main() {
 	fingers[1].direction = 0
 
 	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "public/favicon.ico")
+		http.ServeFile(w, r, filepath.Join("public", "static", "favicon.ico"))
 	})
-	http.Handle("/", http.FileServer(http.Dir("public/")))
+
+	http.HandleFunc("/static/spen-events.js", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, filepath.Join("public", "static", "spen-events.js"))
+	})
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// filepath.Join to automatically use the separator your OS uses
+		t, _ := template.ParseFiles(filepath.Join("public", "templates", "index.html"))
+		if t != nil {
+			t.Execute(w, config)
+		} else {
+			fmt.Println("Error creating template")
+		}
+	})
 
 	http.HandleFunc("/spen", func(w http.ResponseWriter, r *http.Request) {
 		conn, _ := upgrader.Upgrade(w, r, nil)
@@ -181,7 +196,7 @@ func main() {
 		}(conn)
 	})
 
-	fmt.Println("Server running at", config.IP + ":" + config.Port)
 	loadConfig()
-	http.ListenAndServe(config.IP + ":" + Config.Port, nil)
+	fmt.Println("Server running at", config.IP+":"+config.Port)
+	http.ListenAndServe(config.IP+":"+config.Port, nil)
 }
