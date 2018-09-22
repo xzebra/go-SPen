@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"html/template"
 	"net"
@@ -34,11 +35,7 @@ var (
 	upgrader websocket.Upgrader
 	pressing bool
 
-	// config
-	configScreenWidth  float64 = 1920
-	configScreenHeight float64 = 1080
-	configPort                 = "8080"
-	configIP           string  // defined by the user
+	config Config
 
 	// IPPattern is used by regexp to check if it is a valid IP
 	IPPattern = "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.|$)){4}"
@@ -55,9 +52,9 @@ var (
 
 func moveMouse(x, y float64) {
 	// height ratio * screen width
-	tx := int((y / DeviceHeight) * configScreenWidth)
+	tx := int((y / DeviceHeight) * config.ScreenWidth)
 	// width ratio (inverted) * screen width
-	ty := int(((DeviceWidth - x) / DeviceWidth) * configScreenHeight)
+	ty := int(((DeviceWidth - x) / DeviceWidth) * config.ScreenHeight)
 	control.Move(tx, ty)
 }
 
@@ -141,12 +138,30 @@ func selectIP() string {
 			if _, found := added[ip.String()]; !found {
 				ips = append(ips, ip.String())
 				added[ip.String()] = true
-				fmt.Printf("[%d] %s\n", len(ips), ip.String())
+				fmt.Printf("[%d] %s\n", len(ips)-1, ip.String())
 			}
 		}
 	}
 
-	return ""
+	// read user input
+	fmt.Print("\n> ")
+	var index int
+	fmt.Scan(&index)
+	if index < 0 || index >= len(ips) {
+		panic(fmt.Errorf("Index out of bounds"))
+	}
+
+	return ips[index]
+}
+
+func loadConfig() {
+	// iterate all network interfaces and let the user select it
+	config.IP = selectIP()
+	// parse command line flags
+	flag.Float64Var(&config.ScreenWidth, "w", 1920, "screen width")
+	flag.Float64Var(&config.ScreenHeight, "h", 1080, "screen height")
+	flag.StringVar(&config.Port, "p", "8080", "website port")
+	flag.Parse()
 }
 
 func main() {
@@ -165,7 +180,7 @@ func main() {
 		// filepath.Join to automatically use the separator your OS uses
 		t, _ := template.ParseFiles(filepath.Join("public", "templates", "index.html"))
 		if t != nil {
-			t.Execute(w, Config{configScreenWidth, configScreenHeight, configIP, configPort})
+			t.Execute(w, config)
 		} else {
 			fmt.Println("Error creating template")
 		}
@@ -231,9 +246,8 @@ func main() {
 		}(conn)
 	})
 
-	// iterate all network interfaces and let the user select it
-	selectIP()
+	loadConfig()
 	// run the server
-	fmt.Println("Server running at", configIP+":"+configPort)
-	http.ListenAndServe(configIP+":"+configPort, nil)
+	fmt.Println("Server running at", config.IP+":"+config.Port)
+	http.ListenAndServe(config.IP+":"+config.Port, nil)
 }
