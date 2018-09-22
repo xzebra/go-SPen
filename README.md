@@ -1,11 +1,20 @@
 # go-SPen
 
-<p align="center"><img width="350px" src="https://i.imgur.com/NLEOYBm.png"/></p>
 <p align="center">Use the Samsung Note devices as digital drawing tablets</p>
 
 ## Setup
 
-Run the executable and a server will be opened in localhost. Connect through your Note device to your computer's ip address (port 8080). Check the config.json file in order to change your screen resolution.
+Run the executable and a server will be opened in the specified IP. Connect through your Samsung Galaxy Note device to the specified IP address and port. Read the flags below to change the options.
+
+## Flags
+
+```
+go-spen -w 1920 -h 1080 -p 8080
+```
+
+- (-w) Choose screen width resolution (1920 by default)
+- (-h) Choose screen height resolution (1080 by default)
+- (-w) Choose website port (8080 by default)
 
 ## Controls
 
