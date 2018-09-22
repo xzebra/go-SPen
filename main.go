@@ -1,12 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"html/template"
+	"net"
 	"net/http"
-	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -17,10 +17,10 @@ import (
 // Config is used to decode the config.json
 // file into a Config variable
 type Config struct {
-	ScreenWidth  float64 `json:"screen-width"`
-	ScreenHeight float64 `json:"screen-height"`
-	IP           string  `json:"ip"`
-	Port         string  `json:"port"`
+	ScreenWidth  float64
+	ScreenHeight float64
+	Port         string
+	IP           string
 }
 
 type finger struct {
@@ -33,7 +33,16 @@ type finger struct {
 var (
 	upgrader websocket.Upgrader
 	pressing bool
-	config   Config
+
+	// config
+	configScreenWidth  float64 = 1920
+	configScreenHeight float64 = 1080
+	configPort                 = "8080"
+	configIP           string  // defined by the user
+
+	// IPPattern is used by regexp to check if it is a valid IP
+	IPPattern = "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.|$)){4}"
+
 	// DeviceWidth refers to the phone or tablet
 	// screen width
 	DeviceWidth float64
@@ -44,21 +53,11 @@ var (
 	fingers [2]finger
 )
 
-func loadConfig() {
-	file, _ := os.Open("config.json")
-	defer file.Close()
-	decoder := json.NewDecoder(file)
-	err := decoder.Decode(&config)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func moveMouse(x, y float64) {
 	// height ratio * screen width
-	tx := int((y / DeviceHeight) * config.ScreenWidth)
+	tx := int((y / DeviceHeight) * configScreenWidth)
 	// width ratio (inverted) * screen width
-	ty := int(((DeviceWidth - x) / DeviceWidth) * config.ScreenHeight)
+	ty := int(((DeviceWidth - x) / DeviceWidth) * configScreenHeight)
 	control.Move(tx, ty)
 }
 
@@ -114,6 +113,42 @@ func swipe(direction int, initX float64, initY float64, id int) {
 	}
 }
 
+func selectIP() string {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		panic(err)
+	}
+	var ips []string
+	added := make(map[string]bool)
+	fmt.Println("Choose your local IP\n===================")
+	for _, i := range interfaces {
+		addrs, err := i.Addrs()
+		if err != nil {
+			// ignore for now
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			}
+
+			// check if ip is in the form 255.255.255.255
+			if matched, err := regexp.Match(IPPattern, []byte(ip.String())); !matched || err != nil {
+				continue
+			}
+			// Print and add to list
+			if _, found := added[ip.String()]; !found {
+				ips = append(ips, ip.String())
+				added[ip.String()] = true
+				fmt.Printf("[%d] %s\n", len(ips), ip.String())
+			}
+		}
+	}
+
+	return ""
+}
+
 func main() {
 	fingers[0].direction = 0
 	fingers[1].direction = 0
@@ -130,7 +165,7 @@ func main() {
 		// filepath.Join to automatically use the separator your OS uses
 		t, _ := template.ParseFiles(filepath.Join("public", "templates", "index.html"))
 		if t != nil {
-			t.Execute(w, config)
+			t.Execute(w, Config{configScreenWidth, configScreenHeight, configIP, configPort})
 		} else {
 			fmt.Println("Error creating template")
 		}
@@ -196,7 +231,9 @@ func main() {
 		}(conn)
 	})
 
-	loadConfig()
-	fmt.Println("Server running at", config.IP+":"+config.Port)
-	http.ListenAndServe(config.IP+":"+config.Port, nil)
+	// iterate all network interfaces and let the user select it
+	selectIP()
+	// run the server
+	fmt.Println("Server running at", configIP+":"+configPort)
+	http.ListenAndServe(configIP+":"+configPort, nil)
 }

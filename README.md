@@ -1,6 +1,7 @@
 # go-SPen
 
-Use the Samsung Note devices as digital drawing tablets
+<p align="center"><img width="350px" src="https://i.imgur.com/NLEOYBm.png"/></p>
+<p align="center">Use the Samsung Note devices as digital drawing tablets</p>
 
 ## Setup
 
